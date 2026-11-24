@@ -20,6 +20,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const [today, setToday] = useState<Date | null>(null)
+
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("All Categories")
   const [paymentMethod, setPaymentMethod] = useState("All")
@@ -50,9 +52,10 @@ export default function Home() {
   }
 
 
-  useEffect(() => {
-    fetchExpenses()
-  }, [])
+ useEffect(() => {
+  setToday(new Date())
+  fetchExpenses()
+}, [])
 
   
   const deleteExpense = async (id: string) => {
@@ -76,67 +79,72 @@ export default function Home() {
   }
 
 
-  const filteredExpenses = useMemo(() => {
-    const today = new Date()
+  
+const filteredExpenses = useMemo(() => {
+  return expenses.filter((item) => {
+    const searchText = search.toLowerCase().trim()
 
-    return expenses.filter((item) => {
-      const searchText = search.toLowerCase().trim()
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchText) ||
+      item.description.toLowerCase().includes(searchText)
 
-      const matchesSearch =
-        item.title.toLowerCase().includes(searchText)
+    const matchesCategory =
+      category === "All Categories" ||
+      item.category === category
 
-      
-      const matchesCategory =
-        category === "All Categories" || item.category === category
-       
-      const matchesPayment =
-        paymentMethod === "All" || item.paymentMethod === paymentMethod
-        
-      const expenseDate = new Date(item.expenseDate)
-      let matchesDate = true
-      if (dateFilter === "Today") {
-        matchesDate =
-          expenseDate.getFullYear() === today.getFullYear() &&
-          expenseDate.getMonth() === today.getMonth() &&
-          expenseDate.getDate() === today.getDate()
-      }
+    const matchesPayment =
+      paymentMethod === "All" ||
+      item.paymentMethod === paymentMethod
 
-      if (dateFilter === "This Week") {
-        const startOfWeek = new Date(today)
+    const expenseDate = new Date(item.expenseDate)
 
-        const day = today.getDay()
+    let matchesDate = true
 
-        startOfWeek.setDate(today.getDate() - day)
-        startOfWeek.setHours(0, 0, 0, 0)
+    // Apply date filters only after today's date is available
+    if (today && dateFilter === "Today") {
+      matchesDate =
+        expenseDate.getFullYear() === today.getFullYear() &&
+        expenseDate.getMonth() === today.getMonth() &&
+        expenseDate.getDate() === today.getDate()
+    }
 
-        const endOfWeek = new Date(startOfWeek)
-        endOfWeek.setDate(startOfWeek.getDate() + 7)
+    if (today && dateFilter === "This Week") {
+      const startOfWeek = new Date(today)
+      const day = today.getDay()
 
-        matchesDate =
-          expenseDate >= startOfWeek &&
-          expenseDate < endOfWeek
-      }
+      startOfWeek.setDate(today.getDate() - day)
+      startOfWeek.setHours(0, 0, 0, 0)
 
-      if (dateFilter === "This Month") {
-        matchesDate =
-          expenseDate.getFullYear() === today.getFullYear() &&
-          expenseDate.getMonth() === today.getMonth()
-      }
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 7)
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesPayment &&
-        matchesDate
-      )
-    })
-  }, [
-    expenses,
-    search,
-    category,
-    paymentMethod,
-    dateFilter,
-  ])
+      matchesDate =
+        expenseDate >= startOfWeek &&
+        expenseDate < endOfWeek
+    }
+
+    if (today && dateFilter === "This Month") {
+      matchesDate =
+        expenseDate.getFullYear() === today.getFullYear() &&
+        expenseDate.getMonth() === today.getMonth()
+    }
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesPayment &&
+      matchesDate
+    )
+  })
+}, [
+  expenses,
+  search,
+  category,
+  paymentMethod,
+  dateFilter,
+  today,
+])
+
 
  
 

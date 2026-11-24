@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -37,7 +37,23 @@ const initialForm: ExpenseForm = {
   paymentMethod: "",
 }
 
-export default function EditExpense() {
+// Page wrapper with Suspense
+export default function EditExpensePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          Loading edit page...
+        </div>
+      }
+    >
+      <EditExpense />
+    </Suspense>
+  )
+}
+
+// Edit Expense Component
+function EditExpense() {
   const params = useParams<{ id: string }>()
   const id = params.id
 
@@ -48,10 +64,13 @@ export default function EditExpense() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
-  // Get the existing expense
+  // Fetch existing expense
   useEffect(() => {
     const fetchExpense = async () => {
       try {
+        setLoading(true)
+        setError("")
+
         const response = await fetch(`/api/expenses/${id}`)
         const result: ExpenseResponse = await response.json()
 
@@ -80,7 +99,9 @@ export default function EditExpense() {
       }
     }
 
-    fetchExpense()
+    if (id) {
+      fetchExpense()
+    }
   }, [id])
 
   // Handle input changes
@@ -98,7 +119,9 @@ export default function EditExpense() {
   }
 
   // Update expense
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault()
     setError("")
 
@@ -138,7 +161,9 @@ export default function EditExpense() {
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to update expense")
+        throw new Error(
+          result.message || "Failed to update expense"
+        )
       }
 
       alert("Expense updated successfully!")
@@ -159,7 +184,9 @@ export default function EditExpense() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-lg text-gray-600">Loading expense...</p>
+        <p className="text-lg text-gray-600">
+          Loading expense...
+        </p>
       </div>
     )
   }
@@ -173,13 +200,14 @@ export default function EditExpense() {
             <h1 className="text-2xl font-bold text-gray-900">
               Edit Expense
             </h1>
+
             <p className="mt-1 text-sm text-gray-500">
               Update your expense details
             </p>
           </div>
 
           <Link
-            href="/dashboard"
+            href="/"
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
           >
             Back
@@ -201,6 +229,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Expense Title
             </label>
+
             <input
               type="text"
               name="title"
@@ -217,6 +246,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Description
             </label>
+
             <textarea
               name="description"
               value={expense.description}
@@ -233,6 +263,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Amount (₹)
             </label>
+
             <input
               type="number"
               name="amount"
@@ -251,6 +282,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Category
             </label>
+
             <select
               name="category"
               value={expense.category}
@@ -274,6 +306,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Expense Date
             </label>
+
             <input
               type="date"
               name="expenseDate"
@@ -289,6 +322,7 @@ export default function EditExpense() {
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Payment Method
             </label>
+
             <select
               name="paymentMethod"
               value={expense.paymentMethod}
@@ -316,7 +350,7 @@ export default function EditExpense() {
             </button>
 
             <Link
-              href="/dashboard"
+              href="/"
               className="rounded-lg border border-gray-300 px-5 py-3 text-center font-semibold text-gray-700 hover:bg-gray-100"
             >
               Cancel
